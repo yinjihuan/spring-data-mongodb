@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"  
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"  
+    xmlns:tx="http://www.springframework.org/schema/tx" xmlns:util="http://www.springframework.org/schema/util"  
+    xmlns:context="http://www.springframework.org/schema/context" xmlns:mongo="http://www.springframework.org/schema/data/mongo"  
+    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd  
+        http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.0.xsd  
+    http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.0.xsd  
+    http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.0.xsd  
+    http://www.springframework.org/schema/data/mongo http://www.springframework.org/schema/data/mongo/spring-mongo-1.5.xsd  
+    http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+     
+    <bean id="propertyConfigurer"
+		class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="locations">
+			<list>
+				<value>classpath:mongo.properties</value>
+			</list>
+		</property>
+	</bean>
+	<!-- 让Spring通过自动扫描来查询和管理Bean -->
+	<context:component-scan base-package="com.cxytiandi" />
+	
+	<!-- 使Spring关注Annotation -->
+    <context:annotation-config/>
+    
+	<!-- 连接池配置 -->
+	<mongo:mongo id="mongo" replica-set="${mongo.replicaSet}">
+		<mongo:options connections-per-host="${mongo.connectionsPerHost}"
+			threads-allowed-to-block-for-connection-multiplier="${mongo.threadsAllowedToBlockForConnectionMultiplier}"
+			connect-timeout="${mongo.connectTimeout}" max-wait-time="${mongo.maxWaitTime}"
+			auto-connect-retry="${mongo.autoConnectRetry}" socket-keep-alive="${mongo.socketKeepAlive}"
+			socket-timeout="${mongo.socketTimeout}" slave-ok="${mongo.slaveOk}"
+			write-number="${mongo.writeNumber}" write-timeout="${mongo.riteTimeout}"
+			write-fsync="${mongo.writeFsync}" />
+	</mongo:mongo>
+	
+	<!-- 设置使用的数据库名 -->
+	<mongo:db-factory dbname="${mongo.db}" mongo-ref="mongo" username="${mongo.username}" password="${mongo.password}"/>
+	
+	<!-- 默认Mongodb类型映射 -->
+	<bean id="defaultMongoTypeMapper" class="org.springframework.data.mongodb.core.convert.DefaultMongoTypeMapper">
+		<constructor-arg name="typeKey">
+			<!-- 这里设置为空,可以把 spring data mongodb 多余保存的_class字段去掉 -->
+			<null />
+		</constructor-arg>
+	</bean>
+	
+	<mongo:repositories base-package="com.cxytiandi.mongo.repository" />
+	
+	<!-- 自动扫描以下包的有Doucment注解的类 -->
+	<mongo:mapping-converter id="mappingConverter" base-package="com.cxytiandi.mongo.document" type-mapper-ref="defaultMongoTypeMapper"></mongo:mapping-converter>
+	
+	<!-- Mongodb的模板 -->
+	<bean id="mongoTemplate" class="org.springframework.data.mongodb.core.MongoTemplate">
+		<constructor-arg name="mongoDbFactory" ref="mongoDbFactory" />
+		<constructor-arg name="mongoConverter" ref="mappingConverter" />
+	</bean>
+	
+	<!-- Mongodb gridFs的模板 -->
+	<bean id="gridFsTemplate" class="org.springframework.data.mongodb.gridfs.GridFsTemplate">
+	    <constructor-arg ref="mongoDbFactory" />
+	    <constructor-arg ref="mappingConverter" />
+  	</bean>
+  	
+  	<bean class="com.cxytiandi.mongo.autoid.SaveMongoEventListener"></bean>
+	
+</beans>
