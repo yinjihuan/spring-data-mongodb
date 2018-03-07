@@ -40,6 +40,7 @@
 # 作者
 - 尹吉欢 1304489315@qq.com
 - 博客 http://cxytiandi.com/blogs/yinjihuan
+- MongoDb技术交流群：544478648
 
 更多技术分享请关注微信公众号：猿天地
 
